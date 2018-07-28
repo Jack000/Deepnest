@@ -1,0 +1,81 @@
+<html>
+<head>
+<title>Deepnest login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<script src="lock.js"></script>
+
+<script>
+// login
+	// UI-specific stuff in this script
+	function ready(fn){
+		if (document.readyState != 'loading'){
+			fn();
+		}
+		else {
+			document.addEventListener('DOMContentLoaded', fn);
+		}
+	}
+	
+	const path = require('path');
+	const url = require('url');
+		
+	ready(function(){
+		
+		var callbackurl = url.format({
+			pathname: path.join(__dirname, './login.html'),
+			protocol: 'file:',
+			slashes: true
+		  });
+		  
+		var lock = new Auth0Lock('PJGZ1xzyBhBLOCEdRFdIYGNEA1HtIHdt', 'deepnest.auth0.com', {
+			closable: false,
+			auth: {
+			  sso: false,
+			  redirectUrl: 'http://accounts.deepnest.io',
+			},
+			container: 'auth',
+			languageDictionary: {
+				title: "Deepnest login"
+			  },
+			theme: {
+				logo: 'img/auth0logo.svg',
+				primaryColor: '#24C7ED'
+			  }
+		});
+
+		lock.show();
+
+		lock.on("authenticated", function(authResult) {
+		  lock.getProfile(authResult.idToken, function(error, profile) {
+			if (error) {
+			  message('login error', true);
+			  return;
+			}
+			console.log(authResult.idToken);
+			config.set('id_token', authResult.idToken)
+	
+			// Display user information
+			console.log(profile);
+		  });
+		});
+	});
+
+</script>
+
+<style>
+html, body{
+margin: 0;
+padding: 0;
+}
+#auth{
+width: 100%;
+height: 100%;
+}
+</style>
+</head>
+<body>
+<div id="auth">
+
+</div>
+</body>
+</html>
