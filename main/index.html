@@ -20,7 +20,6 @@
 		
 		<script src="svgparser.js"></script>
 		<script src="deepnest.js"></script>
-		<script src="lock.js"></script>
 
 		<script>
 		// UI-specific stuff in this script
@@ -38,7 +37,6 @@
 		const request = require('request');
 		const http = require('http');
 		const path = require('path');
-		var NestUser = null;
 		
 		ready(function(){
 			// main navigation			
@@ -979,26 +977,10 @@
 				document.querySelector('#nest').className = '';
 			}
 			
-			function checkUser(){
-				if(!NestUser){
-					message('Please login to export nests');
-					return false;
-				}
-				
-				if(NestUser.credits < 1 && !NestUser.unlimited){
-					message('Sorry, you\'re out of credits! Purchase some credits in the <img src="img/shop_dark.svg" style="display: inline-block;  width: 1.5em; position: relative; top: 0.3em;" /> store first.');
-					return false;
-				}
-				
-				return true;
-			}
 			var exportbutton = document.querySelector('#export');
 			
 			var exportsvg = document.querySelector('#exportsvg');
 			exportsvg.onclick = function(){
-				if(!checkUser()){
-					return;
-				}
 				
 				var dialog = app.dialog;
 				dialog.showSaveDialog({title: 'Export Deepnest SVG'}, function (fileName) {
@@ -1014,33 +996,13 @@
 							return false;
 						}
 						
-						if(!NestUser.unlimited){
-							var url = 'http://accounts.deepnest.io/credit.php';
-							var req = request.post(url, function (err, resp, body) {
-								if(err || body.trim() != 'success'){
-									message('could not contact Deepnest servers', true);
-								}
-								else{
-									fs.writeFileSync(fileName, exportNest(selected.pop()));
-									fetchUser();
-								}
-							});
-
-							var form = req.form();
-							form.append('id_token', config.getSync('id_token'));
-						}
-						else{
-							fs.writeFileSync(fileName, exportNest(selected.pop()));
-						}
+						fs.writeFileSync(fileName, exportNest(selected.pop()));
 					}
 				});
 			};
 			
 			var exportdxf = document.querySelector('#exportdxf');
 			exportdxf.onclick = function(){
-				if(!checkUser()){
-					return;
-				}
 				var dialog = app.dialog;
 				dialog.showSaveDialog({title: 'Export Deepnest DXF'}, function (fileName) {
 					if(fileName === undefined){
@@ -1071,25 +1033,7 @@
 									message(body, true);
 								}
 								else{
-									
-									if(!NestUser.unlimited){
-										var url2 = 'http://accounts.deepnest.io/credit.php';
-										var req2 = request.post(url2, function (err2, resp2, body2) {
-											if(err2){
-												message('could not contact Deepnest servers', true);
-											}
-											else{
-												fs.writeFileSync(fileName, body);
-												fetchUser();
-											}
-										});
-
-										var form2 = req2.form();
-										form2.append('id_token', config.getSync('id_token'));
-									}
-									else{
-										fs.writeFileSync(fileName, body);
-									}
+									fs.writeFileSync(fileName, body);
 								}
 							}
 						});
@@ -1491,61 +1435,6 @@
 			const url = require('url');
 			
 			window.loginWindow = null;
-			
-			document.querySelectorAll('.loginbutton').forEach(function(b){
-				//console.log('attached');
-				b.onclick = function(){
-					if(loginWindow){
-						loginWindow.destroy();
-						loginWindow = null;
-					}
-					
-					//console.log('starting login');
-				
-					window.loginWindow = new BrowserWindow({width: 350, height: 550, frame: true});
-					//window.loginWindow.webContents.session.clearCache(function(){
-						window.loginWindow.loadURL(url.format({
-							pathname: path.join(__dirname, './login.html'),
-							protocol: 'file:',
-							slashes: true
-						  }));
-					//});
-					
-					//window.loginWindow.webContents.openDevTools();
-				}
-			});
-						
-			fetchUser();
-			
-			// payments
-			
-			/*var stripeHandler = StripeCheckout.configure({
-			  key: 'pk_live_sg4VqmoF9AsmqxKncjVU6NNG',
-			  image: 'https://s3.amazonaws.com/stripe-uploads/acct_15Hkw1KNRJHxi2qRmerchant-icon-1482418578538-auth0logo.png',
-			  locale: 'auto',
-			  token: function(token) {
-				// You can access the token ID with `token.id`.
-				// Get the token ID to your server-side code for use.
-				console.log(token);
-			  }
-			});
-
-			document.getElementById('purchaseSingle').addEventListener('click', function(e) {
-			  // Open Checkout with further options:
-			  
-			  var options = {
-				name: 'Deepnest',
-				description: 'One Credit',
-				currency: 'usd',
-				amount: 100
-			  };
-			  
-			  if(NestUser && NestUser.email){
-			  	options.email = NestUser.email;
-			  }
-			  stripeHandler.open(options);
-			  e.preventDefault();
-			});*/
 		});
 		
 		ipcRenderer.on('background-progress', (event, p) => {
@@ -1567,155 +1456,6 @@
 			var bar = document.querySelector('#progressbar');
 			bar.setAttribute('style', 'width: '+parseInt(p.progress*100)+'%'+(p.progress < 0.01 ? '; transition: none' : ''));
 		});
-		
-		var lock = new Auth0Lock('PJGZ1xzyBhBLOCEdRFdIYGNEA1HtIHdt', 'deepnest.auth0.com',{
-			auth: {
-			  sso: false
-			}
-		});
-		
-		ipcRenderer.on('login-success', (event, user) => {
-			if(!user){
-				message('could not login', true);
-				return;
-			}
-			
-			config.setSync('access_token', user.access_token);
-			config.setSync('id_token', user.id_token);
-			
-			fetchUser();
-		});
-		
-		ipcRenderer.on('purchase-success', (event) => {
-			if(window.shopWindow){
-				window.shopWindow.close();
-				window.shopWindow = null;
-			}
-			
-			fetchUser();
-		});
-		
-		function fetchUser(){
-			if(window.loginWindow){
-				window.loginWindow.close();
-				window.loginWindow = null;
-			}
-			
-			var token = config.getSync('access_token');
-			if(!token){
-				return false;
-			}
-			document.querySelectorAll('.account').forEach(function(a){
-				a.className = 'account spinner';
-			});
-			lock.getUserInfo(token, function (err, profile) {
-				/*if (err) {
-				  return message(err.message, true);
-				}*/
-				
-				if(!profile.email_verified){
-					message('Thanks for registering! Please check your email for the verification link', true);
-					document.querySelectorAll('.account').forEach(function(a){
-						a.className = 'account';
-					});
-					return;
-				}
-				
-				console.log('userinfo: ',profile);
-				
-				// check whether our id_token is expired. If it is, force re-login
-				var url = 'http://accounts.deepnest.io/alive.php';
-				var req = request.post(url, function (err, resp, body) {
-					document.querySelectorAll('.account').forEach(function(a){
-						a.className = 'account';
-					});
-					if(err || body.trim() != 'success'){
-						return;
-					}
-					else{
-						// display logged in user
-						renderUser(profile);
-								
-						NestUser = {
-							credits: 0,
-							unlimited: false
-						};
-				
-						if(typeof profile.app_metadata != 'undefined'){
-							var credits = parseInt(profile.app_metadata.credits);
-							if(typeof credits != 'number' || isNaN(credits) || !isFinite(credits)){
-								credits = 0;
-							}
-							NestUser.credits = credits;
-							NestUser.unlimited = !!profile.app_metadata.unlimited;
-							NestUser.email = profile.email;
-						}
-					}
-				});
-
-				var form = req.form();
-				form.append('id_token', config.getSync('id_token'));
-				
-			});
-		}
-		
-		function renderUser(user){
-			var accounts = document.querySelectorAll('li.account');
-			accounts.forEach(function(a){
-				var button = a.querySelector('.loginbutton');
-				button.style = 'display: none';
-				
-				var wrapper = a.querySelector('.account_wrapper');
-				wrapper.innerHTML = '<span class="account_user">welcome, '+user.nickname+' (<a href="#" class="logout">logout</a>)</span><span class="account_credits">Credits: '+user.app_metadata.credits+'</span><span class="account_unlimited">Unlimited: '+(user.app_metadata.unlimited ? 'YES' : 'no')+'</span><span class="account_purchase"><a href="#">Store</a></span>';
-			});
-			
-			document.querySelectorAll('.logout').forEach(function(l){
-				l.onclick = function(){
-					logoutUser();
-				}
-			});
-			
-			
-			// purchase links
-			var electron = require('electron');
-			var app = electron.remote; 
-			const BrowserWindow = app.BrowserWindow;
-			
-			window.shopWindow = null;
-			
-			document.querySelectorAll('.account_purchase').forEach(function(b){
-				b.onclick = function(){
-					if(window.shopWindow){
-						shopWindow.destroy();
-						shopWindow = null;
-					}
-					
-					if(!NestUser){
-						return false;
-					}
-					
-					var email = '';
-					if(NestUser.email){
-						email = NestUser.email;
-					}
-				
-					window.shopWindow = new BrowserWindow({width: 800, height: 500, frame: true});
-					window.shopWindow.loadURL('https://deepnest.io/store/?id_token='+config.getSync('id_token')+'&email='+email);	
-					//window.shopWindow.webContents.openDevTools();				
-				}
-			});
-		}
-		
-		function logoutUser(){
-			config.setSync('access_token', null);
-			document.querySelectorAll('.account_wrapper').forEach(function(w){
-				w.innerHTML = '';
-			});
-							
-			document.querySelectorAll('.loginbutton').forEach(function(l){
-				l.style = '';
-			});
-		}
 		
 		function message(txt, error){
 			var message = document.querySelector('#message');
@@ -1812,11 +1552,6 @@
 			</span>
 			<li class="button back" id="back">Back</li>
 			
-			<li class="account">
-				<span class="account_wrapper"></span>
-				<a href="#" class="loginbutton">Register/Login</a>
-			</li>
-			
 			<!-- progress bars -->
 			<li class="progress">
 				<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -1879,11 +1614,6 @@
 				<ul class="topnav">
 					<li class="button import" id="import">Import</li>
 					<li class="button start {{ getSheets().length == 0 ? "disabled" : "" }}" id="startnest">Start nest</li>
-					
-					<li class="account">
-					<span class="account_wrapper"></span>
-					<a href="#" class="loginbutton">Register/Login</a>
-					</li>
 				</ul>
 				
 				<div id="parts" class="parts-drag">
