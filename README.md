@@ -1,4 +1,4 @@
-# ![Deepnest](https://deepnest.io/img/logo-large.png)
+<img src="https://deepnest.io/img/logo-large.png" alt="Deepnest" width="250">
 
 **Deepnest**: A fast, robust nesting tool for laser cutters and other CNC tools
 
