@@ -55,12 +55,12 @@
 		// a running list of placements
 		this.nests = [];
 		
-		this.importsvg = function(filename, dirpath, svgstring, scalingFactor){
+		this.importsvg = function(filename, dirpath, svgstring, scalingFactor, dxfFlag){
 			// parse svg
 			// config.scale is the default scale, and may not be applied
 			// scalingFactor is an absolute scaling that must be applied regardless of input svg contents
 			svg = SvgParser.load(dirpath, svgstring, config.scale, scalingFactor);
-			svg = SvgParser.clean();
+			svg = SvgParser.clean(dxfFlag);
 			
 			if(filename){
 				this.imports.push({

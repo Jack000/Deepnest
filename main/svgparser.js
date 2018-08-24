@@ -145,10 +145,10 @@
 	}
 	
 	// use the utility functions in this class to prepare the svg for CAD-CAM/nest related operations
-	SvgParser.prototype.cleanInput = function(){
+	SvgParser.prototype.cleanInput = function(dxfFlag){
 		
 		// apply any transformations, so that all path positions etc will be in the same coordinate space
-		this.applyTransform(this.svgRoot);
+		this.applyTransform(this.svgRoot, '', false, dxfFlag);
 
 		// remove any g elements and bring all elements to the top level
 		this.flatten(this.svgRoot);
@@ -1022,8 +1022,8 @@
 	}
 	
 	// recursively apply the transform property to the given element
-	SvgParser.prototype.applyTransform = function(element, globalTransform, skipClosed){
-		
+	SvgParser.prototype.applyTransform = function(element, globalTransform, skipClosed, dxfFlag){
+
 		globalTransform = globalTransform || '';
 		var transformString = element.getAttribute('transform') || '';
 		transformString = globalTransform + ' ' + transformString;
@@ -1050,7 +1050,7 @@
 			element.removeAttribute('transform');
 			var children = Array.prototype.slice.call(element.children);
 			for(var i=0; i<children.length; i++){
-				this.applyTransform(children[i], transformString, skipClosed);
+				this.applyTransform(children[i], transformString, skipClosed, dxfFlag);
 			}
 		}
 		else if(transform && !transform.isIdentity()){
@@ -1103,12 +1103,18 @@
 							seglist.replaceItem(element.createSVGPathSegLinetoAbs(prevx,s.y),i);
 							s = seglist.getItem(i);
 						}
-						// currently only works for uniform scale, no skew
-						// todo: fully support arbitrary affine transforms...
+						// todo: fix hack from dxf conversion
 						else if(command == 'A'){
-							var arcrotate = (rotate == 180) ? 0 : rotate;
-							var arcsweep =  (rotate == 180) ? !s.sweepFlag : s.sweepFlag;
-							
+						    if(dxfFlag){
+						        // fix dxf import error
+							    var arcrotate = (rotate == 180) ? 0 : rotate;
+							    var arcsweep =  (rotate == 180) ? !s.sweepFlag : s.sweepFlag;
+							}
+							else{
+							    var arcrotate = s.angle + rotate;
+							    var arcsweep = s.sweepFlag;
+							}				
+									
 							seglist.replaceItem(element.createSVGPathSegArcAbs(s.x,s.y,s.r1*scale,s.r2*scale,arcrotate,s.largeArcFlag,arcsweep),i);
 							s = seglist.getItem(i);
 						}

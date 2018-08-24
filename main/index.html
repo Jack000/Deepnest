@@ -599,11 +599,13 @@
 											// expected input dimensions on server is points
 											// scale based on unit preferences
 											var con = null;
-
+                                            var dxfFlag = false;
 											if(ext.toLowerCase() == '.dxf'){
 												//var unit = config.getSync('units');
 												con = Number(config.getSync('dxfImportScale'));
+												dxfFlag = true;
 												console.log('con', con);
+												
 												/*if(unit == 'inch'){
 													con = 72;
 												}
@@ -615,7 +617,7 @@
 											
 											// dirpath is used for loading images embedded in svg files
 											// converted svgs will not have images
-											importData(body, filename, null, con);
+											importData(body, filename, null, con, dxfFlag);
 										}
 									}
 								});
@@ -644,8 +646,8 @@
 				});
 			};
 			
-			function importData(data, filename, dirpath, scalingFactor){
-				window.DeepNest.importsvg(filename, dirpath, data, scalingFactor);
+			function importData(data, filename, dirpath, scalingFactor, dxfFlag){
+				window.DeepNest.importsvg(filename, dirpath, data, scalingFactor, dxfFlag);
 
 				DeepNest.imports.forEach(function(im){
 				im.selected = false;
