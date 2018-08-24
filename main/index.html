@@ -1129,10 +1129,7 @@
 												
 						part.svgelements.forEach(function(e, index){
 							var node = e.cloneNode(false);
-							node.removeAttribute('style');
 							
-							node.setAttribute('stroke', '#000');
-							node.setAttribute('fill', 'none');
 							if(n.tagName == 'image'){
 								var relpath = n.getAttribute('data-href');
 								if(relpath){
@@ -1174,21 +1171,16 @@
 					SvgParser.splitLines(svg);
 					SvgParser.mergeOverlap(svg, 0.1*config.getSync('curveTolerance'));
 					SvgParser.mergeLines(svg);
+					
+					// set stroke and fill for all
+                    var elements = Array.prototype.slice.call(svg.children);
+                    elements.forEach(function(e){
+                        if(e.tagName != 'g' && e.tagName != 'image'){
+                            e.setAttribute('fill', 'none');
+                            e.setAttribute('stroke', '#000000');
+                        }
+                    });
 				}
-				
-				/*if(dxf){
-					console.log('export scale: ',dxfscale);
-					//svg.setAttribute('transform', 'scale('+dxfscale+')');
-				}*/
-				
-				// set stroke and fill for all
-				var elements = Array.prototype.slice.call(svg.children);
-				elements.forEach(function(e){
-					if(e.tagName != 'g' && e.tagName != 'image'){
-						e.setAttribute('fill', 'none');
-						e.setAttribute('stroke', '#000000');
-					}
-				});
 				
 				return (new XMLSerializer()).serializeToString(svg);
 			}
