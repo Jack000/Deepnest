@@ -29,8 +29,6 @@
     "electron-rebuild": "^1.4.0"
   },
   "dependencies": {
-    "auth0-js": "^7.6.0",
-    "auth0-lock": "^10.7.3",
     "electron-config": "^0.2.1",
     "electron-settings": "^2.2.2",
     "electron-window-manager": "^1.0.4",
