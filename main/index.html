@@ -990,6 +990,12 @@
 						console.log("No file selected");
 					}
 					else{
+
+						var fileExt = '.svg';
+						if (!fileName.toLowerCase().endsWith(fileExt)) {
+							fileName = fileName + fileExt;
+						}
+
 						var selected = DeepNest.nests.filter(function(n){
 							return n.selected;
 						});
@@ -1011,6 +1017,12 @@
 						console.log("No file selected");
 					}
 					else{
+
+						var fileExt = '.dxf';
+						if (!fileName.toLowerCase().endsWith(fileExt)) {
+							fileName = fileName + fileExt;
+						}
+
 						var selected = DeepNest.nests.filter(function(n){
 							return n.selected;
 						});
