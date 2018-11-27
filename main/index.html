@@ -574,70 +574,70 @@
 							console.log("No file selected");
 						}
 						else{
-							fileName.forEach((file) => {
-								var ext = path.extname(file);
-								var filename = path.basename(file);
-
-								if(ext.toLowerCase() == '.svg'){
-									readFile(file);
-									importbutton.className = 'button import';
-								}
-								else{
-									importbutton.className = 'button import spinner';
-									
-									// send to conversion server
-									var url = config.getSync('conversionServer');
-									if(!url){
-										url = defaultConversionServer;
-									}
-									
-									var req = request.post(url, function (err, resp, body) {
-										importbutton.className = 'button import';
-										if (err) {
-											message('could not contact file conversion server', true);
-										} else {
-											if(body.substring(0, 5) == 'error'){
-												message(body, true);
-											}
-											else{
-												// expected input dimensions on server is points
-												// scale based on unit preferences
-												var con = null;
-												var dxfFlag = false;
-												if(ext.toLowerCase() == '.dxf'){
-													//var unit = config.getSync('units');
-													con = Number(config.getSync('dxfImportScale'));
-													dxfFlag = true;
-													console.log('con', con);
-													
-													/*if(unit == 'inch'){
-														con = 72;
-													}
-													else{
-														// mm
-														con = 2.83465;
-													}*/
-												}
-												
-												// dirpath is used for loading images embedded in svg files
-												// converted svgs will not have images
-												importData(body, filename, null, con, dxfFlag);
-											}
-										}
-									});
-
-									var form = req.form();
-									form.append('format', 'svg');
-									form.append('fileUpload', fs.createReadStream(file));
-								}
+							importbutton.className = 'button import spinner';
+							fileName.forEach(function(file) {
+								processFile(file);
 							});
+							importbutton.className = 'button import';
 						}
-						
 					});
 				}, 50);
-				
 			};
 			
+			function processFile(file) {
+				var ext = path.extname(file);
+				var filename = path.basename(file);
+
+				if(ext.toLowerCase() == '.svg'){
+					readFile(file);
+				}
+				else{
+					// send to conversion server
+					var url = config.getSync('conversionServer');
+					if(!url){
+						url = defaultConversionServer;
+					}
+					
+					var req = request.post(url, function (err, resp, body) {
+						if (err) {
+							message('could not contact file conversion server', true);
+						} else {
+							if(body.substring(0, 5) == 'error'){
+								message(body, true);
+							}
+							else{
+								// expected input dimensions on server is points
+								// scale based on unit preferences
+								var con = null;
+								var dxfFlag = false;
+								if(ext.toLowerCase() == '.dxf'){
+									//var unit = config.getSync('units');
+									con = Number(config.getSync('dxfImportScale'));
+									dxfFlag = true;
+									console.log('con', con);
+									
+									/*if(unit == 'inch'){
+										con = 72;
+									}
+									else{
+										// mm
+										con = 2.83465;
+									}*/
+								}
+								
+								// dirpath is used for loading images embedded in svg files
+								// converted svgs will not have images
+								importData(body, filename, null, con, dxfFlag);
+							}
+						}
+					});
+
+					var form = req.form();
+					form.append('format', 'svg');
+					form.append('fileUpload', fs.createReadStream(file));
+				}
+			}
+
 			function readFile(filepath){
 				fs.readFile(filepath, 'utf-8', function (err, data) {
 					  if(err){
